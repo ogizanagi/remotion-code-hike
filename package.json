@@ -28,7 +28,7 @@
   },
   "scripts": {
     "start": "remotionb studio",
-    "build": "remotionb render MyComp out/video.mp4",
+    "build": "remotionb render Content out/video.mp4",
     "upgrade": "remotionb upgrade",
     "test": "eslint src --ext ts,tsx,js,jsx && tsc"
   },

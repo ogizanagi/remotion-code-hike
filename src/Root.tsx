@@ -1,28 +1,24 @@
 import { Composition } from "remotion";
 import { Main } from "./Main";
-import { Block, HighlightedCodeBlock, parseRoot } from "codehike/blocks";
-import { z } from "zod";
-
-const Schema = Block.extend({
-  code: z.array(HighlightedCodeBlock),
-});
-
-import Content from "./content.md";
+import Content from "./content/content.mdx";
 import { calculateMetadata } from "./calculate-metadata";
-const { code } = parseRoot(Content, Schema);
-const defaultStepDuration = 90;
+
+const metadata = calculateMetadata(Content);
+
+const [width, height] = [2096, 1180];
 
 export const RemotionRoot = () => {
   return (
-    <Composition
-      id="CodeHikeExample"
-      component={Main}
-      defaultProps={{ steps: code }}
-      fps={30}
-      durationInFrames={defaultStepDuration * code.length}
-      width={1080}
-      height={1080}
-      calculateMetadata={calculateMetadata}
-    />
+    <>
+      <Composition
+        id="Content"
+        component={Main}
+        defaultProps={{ steps: [] }}
+        fps={30}
+        width={width}
+        height={height}
+        calculateMetadata={metadata}
+      />
+    </>
   );
 };

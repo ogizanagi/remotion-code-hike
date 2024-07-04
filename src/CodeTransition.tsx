@@ -10,6 +10,7 @@ import {
 } from "codehike/utils/token-transitions";
 import { applyStyle } from "./utils";
 import { callout } from "./annotations/Callout";
+import { mark } from "./annotations/Mark";
 
 import { loadFont } from "@remotion/google-fonts/RobotoMono";
 import { inlineBlockTokens } from "./annotations/InlineToken";
@@ -70,7 +71,7 @@ export function CodeTransition({
   });
 
   const handlers: AnnotationHandler[] = useMemo(() => {
-    return [inlineBlockTokens, callout];
+    return [inlineBlockTokens, callout, mark];
   }, []);
 
   const style: React.CSSProperties = useMemo(() => {

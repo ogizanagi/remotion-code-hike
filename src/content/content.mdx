@@ -1,0 +1,253 @@
+import "./../style.css";
+
+# Apollo local resolvers
+
+![Intro](../public/images/apollo-local-resolvers.png)
+
+```graphql !! query1
+query GetWidgets {
+  # Imaginons que cette query ne soit pas encore
+  # exposée par notre serveur GraphQL :
+  getWidgets {
+    count
+    rows {
+      id
+      name
+    }
+  }
+}
+```
+
+```graphql !! query1
+query GetWidgets {
+  # On annote la query avec la directive @client
+  # pour utiliser un resolver local :
+  getWidgets {
+    count
+    rows {
+      id
+      name
+    }
+  }
+}
+```
+
+```graphql !! query1
+query GetWidgets {
+  # On annote la query avec la directive @client
+  # pour utiliser un resolver local :
+  getWidgets @client {
+    count
+    rows {
+      id
+      name
+    }
+  }
+}
+```
+
+```typescript !! fake-data
+// !duration 70
+// !callout[/FakeWidgets/]  🧑‍🎨  On prépare des données fictives
+const FakeWidgets = [
+  { id: 1, name: 'Widget 1' },
+  { id: 2, name: 'Widget 2' },
+  { id: 3, name: 'Widget 3' },
+  { id: 4, name: 'Widget 4' },
+  { id: 5, name: 'Widget 5' },
+  // […]
+];
+```
+
+```typescript !! resolver
+// !duration 50
+// !callout[/client/] Puis, au niveau du client Apollo…
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+});
+```
+
+```typescript !! resolver
+// !duration 70
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  // !callout[/resolvers/] on renseigne un resolver local pour notre query 👇🏻
+  resolvers: {
+    Query: {
+      // !mark(1:3)
+      getWidgets: () => {
+        // ...
+      }
+    }
+  }
+});
+```
+
+```typescript !! resolver
+// !duration 60
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  resolvers: {
+    Query: {
+      // !mark(1:5)
+      getWidgets: () => ({
+        // !callout[/__typename/] Dans lequel on fournit la structure attendue en retour
+        __typename: 'WidgetList',
+        count: FakeWidgets.length,
+        rows: FakeWidgets,
+      })
+    }
+  }
+});
+```
+
+```typescript !! resolver
+// !duration 80
+// !mark(5:9)
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  resolvers: {
+    Query: {
+      getWidgets: () => ({
+        __typename: 'WidgetList',
+        count: FakeWidgets.length,
+        // !callout[/FakeWidgets/] Avec nos lignes de données simulées
+        rows: FakeWidgets,
+      })
+    }
+  }
+});
+```
+
+```typescript !! component
+// !duration 80
+import { useQuery } from '@apollo/client';
+import GET_WIDGETS from './queries/GetWidgets.graphql';
+
+// !callout[/useQuery\(GET_WIDGETS\)/] On consomme notre query de manière habituelle
+const { data } = useQuery(GET_WIDGETS);
+```
+
+```typescript !! component
+// !duration 120
+import { useQuery } from '@apollo/client';
+import GET_WIDGETS from './queries/GetWidgets.graphql';
+
+// !callout[/useQuery\(GET_WIDGETS\)/] { "message": "Sauf qu'au lieu de contacter le serveur GraphQL, \nnotre resolver côté client est utilisé" }
+const { data } = useQuery(GET_WIDGETS);
+```
+
+```typescript !! component
+// !duration 30
+import { useQuery } from '@apollo/client';
+import GET_WIDGETS from './queries/GetWidgets.graphql';
+
+// !callout[/data/] { "start" : 5, "end": 20, "message": "et nous obtenons nos données fictives ! ✨"}
+const { data } = useQuery(GET_WIDGETS);
+```
+
+```typescript !! component
+// !duration 80
+import { useQuery } from '@apollo/client';
+import GET_WIDGETS from './queries/GetWidgets.graphql';
+
+// !callout[/data/] { "start" : 0, "end": 0, "message": "et nous obtenons nos données fictives ! ✨"}
+const { data } = useQuery(GET_WIDGETS);
+
+// !mark(1:10)
+ data: {
+   getWidgets: {
+     count: 5,
+     rows: [
+       { id: 1, name: 'Widget 1' },
+       { id: 2, name: 'Widget 2' },
+       […]
+     ]
+   }
+ }
+```
+
+```graphql !! query2
+query GetWidgets {
+  # Il est possible de simuler l'entièreté d'une query :
+  getWidgets @client {
+    count
+    rows {
+      id
+      name
+      dataset
+    }
+  }
+}
+```
+
+```graphql !! query2
+query GetWidgets {
+  getWidgets {
+    count
+    rows {
+      id
+      name
+      # Ou seulement une partie :
+      dataset @client
+    }
+  }
+}
+```
+
+```graphql !! query2
+mutation AddWidgets {
+  # Ainsi que des mutations !
+  addWidget @client {
+    id
+    name
+  }
+}
+```
+
+```markdown !! conclusion
+## En résumé 👀
+
+- Nous avons simulé une query GraphQL côté client
+  **sans toucher à notre code fonctionnel** ✨
+```
+
+```markdown !! conclusion
+## En résumé 👀
+
+- Nous avons simulé une query GraphQL côté client
+  **sans toucher à notre code fonctionnel** ✨
+
+- Lorsque la query sera disponible côté serveur,
+  il suffira de retirer la directive `@client`
+```
+
+```markdown !! conclusion
+## En résumé 👀
+
+- Nous avons simulé une query GraphQL côté client
+  **sans toucher à notre code fonctionnel** ✨
+
+- Lorsque la query sera disponible côté serveur,
+  il suffira de retirer la directive `@client`
+
+- L'ensemble des interactions avec notre UI et les données
+  peuvent être anticipées par l'équipe front
+```
+
+```markdown !! conclusion
+## En résumé 👀
+
+- Nous avons simulé une query GraphQL côté client
+  **sans toucher à notre code fonctionnel** ✨
+
+- Lorsque la query sera disponible côté serveur,
+  il suffira de retirer la directive `@client`
+
+- L'ensemble des interactions avec notre UI et les données
+  peuvent être anticipées par l'équipe front
+
+- indépendamment du back-end ! 🤌
+```
+
+[//]: # (Outro? Screen aller plus loin avec notre article)
