@@ -1,41 +1,70 @@
-import { Block, HighlightedCodeBlock, parseRoot } from "codehike/blocks";
-import { HighlightedCode } from "codehike/code";
+import { Block, HighlightedCodeBlock, ImageBlock, parseRoot } from "codehike/blocks";
 import { MDXProps } from 'mdx/types';
 import { CalculateMetadataFunction } from 'remotion';
 import { z } from 'zod';
-import { Step } from './types/steps';
 import { getStepDuration } from './utils/steps';
+import { Frontmatter } from './Root';
+import React, { ComponentProps } from 'react';
+import { Main } from './Main';
 
-const Schema = Block.extend({
-  code: z.array(HighlightedCodeBlock),
-  annotations: z.custom<HighlightedCode["annotations"]>(),
-});
+const schema = Block.extend({
+  steps: z.array(
+    Block.extend({
+      code: HighlightedCodeBlock.optional(),
+      cover: ImageBlock.optional(),
+      /**
+       * Allow for duration to be defined outside of the code block for unsupported languages (graphql, md, …)
+       */
+      duration: z.string().transform((v) => parseInt(v, 10)).optional(),
+      /**
+       * Allow for callouts to be defined outside of the code block for unsupported languages (graphql, md, …)
+       */
+      callout: z.string()
+        .transform((c) => JSON.parse(c))
+        .transform(([lineNumber, fromColumn, toColumn, query]) => ({
+          name: "callout",
+          lineNumber,
+          fromColumn,
+          toColumn,
+          query,
+        }))
+        .optional()
+      ,
+    }).transform((c) => ({
+      ...c,
+      code: {
+        ...c.code,
+        annotations: [
+          ...(c.code?.annotations ?? []),
+          // Forwards the outside callout as a code block annotation
+          ...(c.callout ? [c.callout] : []),
+        ],
+      }
+    }))
+  ),
+})
 
-type Props = {
-  steps: Step[];
-};
+export type Schema = z.infer<typeof schema>;
 
-export const calculateMetadata = (Content: (props: MDXProps) => JSX.Element): CalculateMetadataFunction<Props> => async () => {
-  const parsed = parseRoot(Content, Schema);
+type MDX = (props: MDXProps) => React.ReactElement;
 
-  const { code } = parsed;
-  const steps = [
-    'images/apollo-local-resolvers.png',
-    ...code,
-  ];
+export const calculateMetadata = (
+  Content: MDX,
+  frontmatter: Frontmatter
+): CalculateMetadataFunction<ComponentProps<typeof Main>> => async () => {
+  const { steps } = parseRoot(Content, schema);
 
   return {
-    durationInFrames: computeDurationInFrames(steps),
+    durationInFrames: computeDurationInFrames(steps, frontmatter.stepDuration),
     props: {
       steps,
+      evenSteps: frontmatter.evenSteps,
+      stepDuration: frontmatter.stepDuration,
+      transitionDuration: frontmatter.transitionDuration,
     },
-  };
+  } as const;
 };
 
-function computeDurationInFrames(steps: Step[]) {
-  return steps.reduce<number>((acc, step) => {
-    acc += getStepDuration(step);
-
-    return acc;
-  }, 0)
+function computeDurationInFrames(steps: Schema['steps'], defaultDuration?: number) {
+  return steps.map((s) => getStepDuration(s, defaultDuration)).reduce((a, b) => a + b, 0);
 }

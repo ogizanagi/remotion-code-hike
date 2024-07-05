@@ -1,23 +1,36 @@
 import { Composition } from "remotion";
 import { Main } from "./Main";
-import Content from "./content/content.mdx";
+// @ts-expect-error mdx-frontmatter plugin
+import Content, { frontmatter as rawFrontmatter } from "./content/content.mdx";
 import { calculateMetadata } from "./calculate-metadata";
+import { z } from 'zod';
 
-const metadata = calculateMetadata(Content);
+const frontmatterSchema = z.object({
+  title: z.string().optional(),
+  width: z.number().optional().default(1080),
+  height: z.number().optional().default(720),
+  fps: z.number().optional().default(30),
+  stepDuration: z.number().optional().default(90),
+  evenSteps: z.boolean().optional().default(true),
+  transitionDuration: z.number().optional().default(30),
+});
 
-const [width, height] = [2096, 1180];
+export type Frontmatter = z.infer<typeof frontmatterSchema>;
 
 export const RemotionRoot = () => {
+  const frontmatter = frontmatterSchema.parse(rawFrontmatter);
+
+  const { width, height, fps} = frontmatter;
+
   return (
     <>
       <Composition
         id="Content"
         component={Main}
-        defaultProps={{ steps: [] }}
-        fps={30}
+        fps={fps}
         width={width}
         height={height}
-        calculateMetadata={metadata}
+        calculateMetadata={calculateMetadata(Content, frontmatter)}
       />
     </>
   );

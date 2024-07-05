@@ -1,27 +1,28 @@
 import { useCurrentFrame } from "remotion";
 import { getStepDuration } from './utils/steps';
-import { Step } from './types/steps';
 import { useMemo } from 'react';
+import { Schema } from './calculate-metadata';
 
 type Props = Readonly<{
-  steps: Step[];
+  steps: Schema['steps'];
   /**
-   * If true, the progress bar will have uneven steps widths, respecting their duration ratio.
+   * If false, the progress bar will have uneven steps widths, respecting their duration ratio.
    */
-  unevenSteps?: boolean;
+  evenSteps?: boolean;
+  stepDuration?: number
 }>
 
-export function ProgressBar({ steps, unevenSteps = true }: Props) {
+export function ProgressBar({ steps, evenSteps = true, stepDuration: defaultStepDuration }: Props) {
   const frame = useCurrentFrame();
 
   // Computes the start and end frames of every step:
   const stepFrames = useMemo(() => steps.reduce<[number, number][]>((acc, step) => {
     const startFrame = acc.length === 0 ? 0 : acc[acc.length - 1][1];
-    const stepDuration = getStepDuration(step);
+    const stepDuration = getStepDuration(step, defaultStepDuration);
     const endFrame = startFrame + stepDuration;
 
     return [...acc, [startFrame, endFrame]];
-  }, []), [steps]);
+  }, []), [defaultStepDuration, steps]);
 
   return (
     <div
@@ -44,7 +45,7 @@ export function ProgressBar({ steps, unevenSteps = true }: Props) {
             borderRadius: 6,
             overflow: "hidden",
             height: "100%",
-            flex: unevenSteps ? end - start : 1,
+            flex: evenSteps ? 1 : end - start,
           }}
         >
           <div

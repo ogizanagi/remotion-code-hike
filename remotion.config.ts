@@ -1,4 +1,6 @@
 import { Config, WebpackOverrideFn } from "@remotion/cli/config";
+import remarkFrontmatter from 'remark-frontmatter';
+import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 
 const chConfig = {
   syntaxHighlighting: {
@@ -8,6 +10,7 @@ const chConfig = {
 
 const enableMdx: WebpackOverrideFn = async (currentConfiguration) => {
   const { remarkCodeHike, recmaCodeHike } = await import('codehike/mdx');
+
   return {
     ...currentConfiguration,
     module: {
@@ -21,8 +24,17 @@ const enableMdx: WebpackOverrideFn = async (currentConfiguration) => {
           use: [
             {
               loader: '@mdx-js/loader',
+              /** @type {import('@mdx-js/loader').Options} */
               options: {
-                remarkPlugins: [[remarkCodeHike, chConfig]],
+                remarkPlugins: [
+                  // About .default workaround:
+                  // https://github.com/shikijs/twoslash/issues/147#issuecomment-1076816797
+                  // @ts-expect-error default does exists
+                  remarkFrontmatter.default,
+                  // @ts-expect-error default does exists
+                  remarkMdxFrontmatter.default,
+                  [remarkCodeHike, chConfig],
+                ],
                 recmaPlugins: [[recmaCodeHike, chConfig]],
               },
             },

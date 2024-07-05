@@ -1,3 +1,7 @@
 {
   "extends": "@remotion",
+  "rules": {
+    "capitalized-comments": ["off"],
+    "no-redeclare": ["off"]
+  }
 }

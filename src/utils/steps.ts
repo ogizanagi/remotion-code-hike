@@ -1,16 +1,15 @@
-import { Step } from '../types/steps';
+import { Schema } from '../calculate-metadata';
 
-const DEFAULT_STEP_DURATION = 90;
-
-export function getStepDuration(step: Step, defaultDuration: number = DEFAULT_STEP_DURATION) {
-  if (typeof step === 'string') {
-    return defaultDuration;
+export function getStepDuration(step: Schema['steps'][number], defaultDuration: number = 90) {
+  if (step.code) {
+    const durationAnnotation = step.code.annotations.find((annotation) => annotation.name === 'duration');
+    if (durationAnnotation) {
+      return parseInt(durationAnnotation.query, 10);
+    }
   }
 
-  const durationAnnotation = step.annotations.find((annotation) => annotation.name === 'duration');
-
-  if (durationAnnotation) {
-    return Number.parseInt(durationAnnotation.query, 10);
+  if (step.duration) {
+    return step.duration;
   }
 
   return defaultDuration;
